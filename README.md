@@ -65,7 +65,7 @@ The `SMO_ES` class provides a flexible interface for training Support Vector Mac
 ## Example Usage
 
 ```python
-from smo_es import SMO_ES
+from SMO_ES import SMO_ES
 
 # Define your SVM with early stopping
 model = SMO_ES(
@@ -91,20 +91,17 @@ print("Final Accuracy:", model.accuracy)
 
 ## Installation
 
-To install the `SMO_ES` algorithm, simply clone the repository and install the dependencies:
+To install the `SMO_ES` algorithm, clone the repository and install the dependencies:
 
 ```bash
 git clone https://github.com/your-repo/smo_es.git
-cd smo_es
-pip install -r requirements.txt
+cd SMO_ES
+conda env create -f environment.yml
 ```
 
 ## Dependencies
 
 - `numpy`
-- `scipy`
-- `sklearn`
+- `scikit-learn`
+- `numba`
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
