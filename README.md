@@ -94,7 +94,7 @@ print("Final Accuracy:", model.accuracy)
 To install the `SMO_ES` algorithm, clone the repository and install the dependencies:
 
 ```bash
-git clone https://github.com/your-repo/smo_es.git
+git clone https://github.com/idekker1/SMO_ES.git
 cd SMO_ES
 conda env create -f environment.yml
 ```
