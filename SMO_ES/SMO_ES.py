@@ -62,7 +62,6 @@ def numba_linear(x1, x2):
     # Compute the linear kernel function using the dot product
     return np.dot(x1, x2.T)
 
-
 # Objective functions
 @jit(nopython=True)
 def numba_dual_objective(alphas, y, K):
@@ -90,7 +89,6 @@ def numba_dual_objective(alphas, y, K):
 
     # Return the dual objective value
     return a - 0.5 * b
-
 
 @jit(nopython=True)
 def numba_hinge_loss(K, alphas, y, bias, X_val, y_val):
@@ -228,7 +226,6 @@ def accuracy_score(y_true, y_pred):
     return accuracy
 
 
-
 @jit(nopython=True)
 def numba_working_set_selection(y, alphas, G, Q, c, tau, tol, n):
     """Selects a working set (pair of indices) for optimization in an SVM solver.
@@ -348,11 +345,11 @@ class SMO_ES():
         kernel (str): Kernel type, default is 'linear'.
         gamma (float): Kernel coefficient for 'rbf' kernel.
         max_iter (int): Maximum number of iterations (-1 for no limit).
-        r (int): Number of optimization runs per training session.
+        r (int): Number of iterations after which we check ES objectives.
         patience (int): Number of iterations without improvement before stopping (-1 for disabled).
         early_stop (bool): Whether to enable early stopping.
         es_tolerance (float): Tolerance for early stopping condition.
-        objective (str): Optimization objective ('acc' for accuracy).
+        es_objective (str): Optimization objective ('acc' for accuracy).
         time_lim (float, optional): Maximum allowed training time in seconds.
         log_objectives (bool): Whether to log intermediate objective values.
     """
@@ -361,7 +358,7 @@ class SMO_ES():
             c=1.0, 
             tolerance=1e-3, 
             kernel='linear', 
-            gamma=1.0, 
+            gamma= 'auto', 
             max_iter=-1, 
             r=1, 
             patience=-1, 
@@ -401,7 +398,7 @@ class SMO_ES():
         self.es_tol = es_tolerance  # Tolerance for early stopping
         self.r = r
         self.obj_max = 0.0  # Stores max objective value for stopping
-        self.ES_flag = False
+
         
         # Logging and tracking
         self.iters = 0 # Number of iterations of the SMO algorithm
@@ -409,6 +406,10 @@ class SMO_ES():
         self.no_updates = 0  # Counter for unchanged solutions
         self.initialized = False  # Whether the model has been initialized
         
+        # Status variables
+        self.finished = False
+        self.ES_flag = False
+               
         # Logging settings
         self.log_objectives = log_objectives  # Whether to log objectives
         
@@ -459,7 +460,7 @@ class SMO_ES():
             return 1.0 / X.shape[1]
         elif self.gamma == 'scale':
             X_var = X.var()
-            return 1.0 / (X.shape[1] * X_var) if X_var > self.eps else 1.0
+            return 1.0 / (X.shape[1] * X_var) if X_var > self.tol else 1.0
         else:
             raise ValueError(f"'{self.gamma}' is incorrect value for gamma")
 
@@ -480,7 +481,7 @@ class SMO_ES():
         elif self.kernel == 'linear':
             return self.linear_kernel
         elif self.kernel == 'rbf':
-            self.set_gamma(X)
+            self.gamma = self.set_gamma(X)
             return self.rbf_kernel
         else:
             raise ValueError(f"'{self.kernel}' is incorrect value for kernel")
@@ -634,11 +635,16 @@ class SMO_ES():
      
         
         
-    def fit(self, X, y, X_val, y_val):
+    def fit(self, X, y, X_val = None, y_val = None):
         """Trains the SVM using the SMO algorithm with early stopping."""
         
         # Initialize if not already done
         if not self.initialized:
+            # Need validation data to log objectives or apply early stopping.
+            if (self.log_objectives or self.early_stop) and (X_val is None or y_val is None):
+                print('No validation data provided: Terminate Training')
+                raise SystemExit(1)
+            
             self.init_startup(X, y, X_val, y_val)
             self.initialized = True
         
@@ -646,6 +652,7 @@ class SMO_ES():
             # Select working set
             i, j = self.working_set_selection()
             if j == -1:
+                self.finished = True # Training SVM is finished
                 break  # Convergence reached
             
             # Compute Q-related terms
@@ -711,6 +718,7 @@ class SMO_ES():
                             if self.patience_cnt == 0:
                                 print("Training Stopped Early")
                                 self.ES_flag = True  # Set early stopping flag
+                                self.finished = True # Training SVM is finished
                                 break
                         else:
                             # Reset patience count and update the best observed accuracy
@@ -730,6 +738,7 @@ class SMO_ES():
                             if self.patience_cnt == 0:
                                 print("Training Stopped Early")
                                 self.ES_flag = True  # Set early stopping flag
+                                self.finished = True # Training SVM is finished
                                 break
                         else:
                             # Reset patience count and update the best observed hinge loss
@@ -750,5 +759,6 @@ class SMO_ES():
         
         # calculate the bias of the model.
         self.bias = numba_bias(self.n, self.y, self.G, self.alphas, self.c)
+        self.finished = True # Training SVM is finished
         
 
