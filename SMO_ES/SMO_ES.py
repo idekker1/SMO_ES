@@ -14,7 +14,6 @@ import numpy as np
 from numba import jit
 from numba import njit
 import time
-import h5py
 
 # Kernel functions
 @jit(nopython=True)
@@ -537,24 +536,6 @@ class SMO_ES():
         kernel_val = self.kernel_func(data, self.X[svs])
         return numba_predict(data, self.alphas, kernel_val, self.y, self.bias)
    
-    def output_h5py(self, name='output.hdf5'):
-        """Saves intermediate results to an HDF5 file.
-
-        This function stores the intermediate accuracy, hinge loss, primal objective, and dual objective 
-        values into an HDF5 file. The data is saved in datasets with appropriate names.
-
-        Args:
-            name (str, optional): The name of the HDF5 file to save the data to. Defaults to 'output.hdf5'.
-
-        Returns:
-            None: The function writes the data to the specified HDF5 file and does not return a value.
-        """
-        with h5py.File(name, 'w') as f:
-            f.create_dataset('acc', data=self.intermediate_acc)
-            f.create_dataset('hinge', data=self.intermediate_loss)
-            f.create_dataset('primal', data=self.intermediate_prim)
-            f.create_dataset('dual', data=self.intermediate_dual)
-
     def working_set_selection(self):
         """Selects the working set for the optimization problem.
 
