@@ -642,8 +642,7 @@ class SMO_ES():
         if not self.initialized:
             # Need validation data to log objectives or apply early stopping.
             if (self.log_objectives or self.early_stop) and (X_val is None or y_val is None):
-                print('No validation data provided: Terminate Training')
-                raise SystemExit(1)
+                raise ValueError(f"Terminate training: X_val or y_val is None")
             
             self.init_startup(X, y, X_val, y_val)
             self.initialized = True
