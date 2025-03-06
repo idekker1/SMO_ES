@@ -83,7 +83,7 @@ model = SMO_ES(
 )
 
 # Fit the model on your data
-model.fit(X_train, y_train)
+model.fit(X_train, y_train, X_val, y_val)
 
 # Access the results
 print("Final Accuracy:", model.accuracy)
